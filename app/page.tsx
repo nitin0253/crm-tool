@@ -20,7 +20,7 @@ const HEADERS_KEY = "spyne_crm_tool_extra_headers";
 
 export default function Page() {
   const [videoId, setVideoId] = useState("");
-  const [toUnHide, setToUnHide] = useState(false);
+  const [toUnHide, setToUnHide] = useState(true);
   const [toReject, setToReject] = useState(false);
   const [crmStatus, setCrmStatus] = useState<CrmStatus>("qc_unassigned");
 
