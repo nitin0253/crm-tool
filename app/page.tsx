@@ -16,7 +16,6 @@ const CRM_OPTIONS: { value: CrmStatus; label: string }[] = [
 ];
 
 const TOKEN_KEY = "spyne_crm_tool_token";
-const COOKIE_KEY = "spyne_crm_tool_cookie";
 const HEADERS_KEY = "spyne_crm_tool_extra_headers";
 
 export default function Page() {
@@ -26,7 +25,7 @@ export default function Page() {
   const [crmStatus, setCrmStatus] = useState<CrmStatus>("qc_unassigned");
 
   const [authToken, setAuthToken] = useState("");
-  const [sessionCookie, setSessionCookie] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
   const [extraHeaders, setExtraHeaders] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [rememberToken, setRememberToken] = useState(true);
@@ -44,10 +43,8 @@ export default function Page() {
 
   useEffect(() => {
     const t = localStorage.getItem(TOKEN_KEY);
-    const c = localStorage.getItem(COOKIE_KEY);
     const h = localStorage.getItem(HEADERS_KEY);
     if (t) setAuthToken(t);
-    if (c) setSessionCookie(c);
     if (h) setExtraHeaders(h);
   }, []);
 
@@ -63,18 +60,12 @@ export default function Page() {
       setResult({ ok: false, error: "Auth token is required." });
       return;
     }
-    if (!sessionCookie.trim()) {
-      setResult({ ok: false, error: "Session cookie is required." });
-      return;
-    }
 
     if (rememberToken) {
       localStorage.setItem(TOKEN_KEY, authToken);
-      localStorage.setItem(COOKIE_KEY, sessionCookie);
       localStorage.setItem(HEADERS_KEY, extraHeaders);
     } else {
       localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(COOKIE_KEY);
       localStorage.removeItem(HEADERS_KEY);
     }
 
@@ -89,7 +80,6 @@ export default function Page() {
           crmStatus,
           toReject,
           authToken,
-          sessionCookie,
           extraHeaders,
         }),
       });
@@ -192,38 +182,36 @@ export default function Page() {
           <div className="h-px bg-line" />
 
           <div>
-            <label className="block text-sm mb-1.5 text-[#9da7b3]">
-              Your auth token
-            </label>
-            <input
-              type="password"
-              value={authToken}
-              onChange={(e) => setAuthToken(e.target.value)}
-              placeholder="The value after 'Bearer ' in Postman's Authorization header"
-              className="w-full bg-[#0d1117] border border-line rounded-md px-3 py-2 font-mono text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1.5 text-[#9da7b3]">
-              Your session cookie
-            </label>
-            <input
-              type="password"
-              value={sessionCookie}
-              onChange={(e) => setSessionCookie(e.target.value)}
-              placeholder="sails.sid=s%3A..."
-              className="w-full bg-[#0d1117] border border-line rounded-md px-3 py-2 font-mono text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-            />
-            <label className="flex items-center gap-2 text-xs text-[#7d8590] mt-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={rememberToken}
-                onChange={(e) => setRememberToken(e.target.checked)}
-                className="w-3.5 h-3.5 accent-accent"
-              />
-              Remember on this device (stored only in this browser)
-            </label>
+            <button
+              type="button"
+              onClick={() => setShowAuth((s) => !s)}
+              className="flex items-center justify-between w-full text-left text-sm text-[#9da7b3] hover:text-[#e6edf3] transition-colors"
+            >
+              <span>Auth params</span>
+              <span className="text-xs text-accent">
+                {showAuth ? "Hide" : "Show"}
+              </span>
+            </button>
+            {showAuth && (
+              <div className="mt-2 space-y-2">
+                <input
+                  type="password"
+                  value={authToken}
+                  onChange={(e) => setAuthToken(e.target.value)}
+                  placeholder="The value after 'Bearer ' in Postman's Authorization header"
+                  className="w-full bg-[#0d1117] border border-line rounded-md px-3 py-2 font-mono text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                />
+                <label className="flex items-center gap-2 text-xs text-[#7d8590] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberToken}
+                    onChange={(e) => setRememberToken(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-accent"
+                  />
+                  Remember on this device (stored only in this browser)
+                </label>
+              </div>
+            )}
           </div>
 
           <div>
