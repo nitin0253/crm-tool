@@ -11,16 +11,31 @@ Spyne video-service API, so people without Postman access can do it too.
   `https://api.spyne.ai/video-service/v1/studio/qc/update-video-states`
   server-side. This avoids CORS issues and keeps the actual upstream
   call off the client's network tab.
-- Each user pastes their own **auth token** and **session cookie**
-  (both from Postman: the `authorization: Bearer <token>` header and
-  the `Cookie: sails.sid=...` header) into the form. Both are required
-  by this endpoint. They're sent with each request and, optionally,
-  saved in that browser's `localStorage` so people don't have to
-  repaste them every time. Nothing is stored on the server or in any
-  database.
+- Each user pastes their own **auth token** (from Postman's
+  `authorization: Bearer <token>` header) into the form, tucked behind
+  a collapsed "Auth params" toggle so it's out of the way by default.
+  It's sent with each request and, optionally, saved in that browser's
+  `localStorage` so people don't have to repaste it every time.
+  Nothing is stored on the server or in any database.
+- The **session cookie** (`Cookie: sails.sid=...`) is a shared service
+  credential, so it's not in the UI at all — it's baked into the
+  deployment as a Vercel environment variable (see below) and used for
+  every request automatically.
 - "Additional headers" (collapsed by default) lets you paste any other
   header as raw JSON, in case the endpoint ever needs more than
   Authorization + Cookie.
+
+## Required environment variable
+
+Set this in the Vercel project settings (Settings → Environment
+Variables):
+
+| Name                  | Value                                  |
+|------------------------|-----------------------------------------|
+| `SPYNE_SESSION_COOKIE` | `sails.sid=s%3A...` (the full cookie value from Postman) |
+
+Redeploy after adding it. If it's ever missing, the app returns a
+clear error instead of silently failing.
 
 ## Local dev
 
@@ -50,14 +65,16 @@ audit-log purposes).
 
 ## Notes / things to double check
 
-- Auth is confirmed as two headers: `Authorization: Bearer <token>` and
-  `Cookie: sails.sid=...`. The token that decodes from the JWT-looking
-  string includes `enterprise_id` / `team_id` / `device_id`, so it's
-  tied to a specific user session — each person needs their own,
-  copied fresh from their own Postman/browser session (it will expire
-  like any session token).
+- The session cookie is shared across the team, but it's still a real
+  session credential — if it ever gets rotated or invalidated, update
+  `SPYNE_SESSION_COOKIE` in Vercel and redeploy (or just save the env
+  var again, no code change needed).
+- The bearer token you showed decodes to include `enterprise_id` /
+  `team_id` / `device_id`. If that's also meant to be shared rather
+  than per-user, say the word and I'll move it into an env var too and
+  drop the "Auth params" section from the UI entirely.
 - `crmStatus` is currently restricted to the four values you showed:
   `qc_unassigned`, `qc_assigned`, `qc_inprogress`, `qc_done`. Add more
   in `app/page.tsx` (`CRM_OPTIONS`) if there are others.
 - Don't commit real tokens/cookies into the repo or into any example
-  `.env` file — they're per-user session credentials, not app config.
+  `.env` file — set them only in Vercel's environment variable UI.
