@@ -28,10 +28,18 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    if (!sessionCookie || typeof sessionCookie !== "string") {
+
+    // The session cookie is a shared service credential, so it's baked
+    // into the deployment as an env var. A per-request value in the
+    // body (if ever sent) overrides it, useful for local testing.
+    const resolvedCookie = sessionCookie?.trim() || process.env.SPYNE_SESSION_COOKIE;
+    if (!resolvedCookie) {
       return NextResponse.json(
-        { error: "Session cookie is required" },
-        { status: 400 }
+        {
+          error:
+            "No session cookie configured. Set SPYNE_SESSION_COOKIE in the Vercel project's environment variables.",
+        },
+        { status: 500 }
       );
     }
 
@@ -44,7 +52,7 @@ export async function POST(req: NextRequest) {
         ? authToken.trim()
         : `Bearer ${authToken.trim()}`,
       // sails.sid=... — required by this endpoint in addition to the bearer token.
-      Cookie: sessionCookie.trim(),
+      Cookie: resolvedCookie,
     };
 
     // Allow pasting any additional headers (e.g. cookies, x-tenant-id, etc.)
